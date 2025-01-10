@@ -1,8 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import {useState} from 'react'
 
-export default function PostForm({ user }: { user: any }) {
+export default function PostForm({user, onPostCreated}: { user: any; onPostCreated: () => void; }) {
     const [title, setTitle] = useState('')
     const [content, setContent] = useState('')
     const [isLoading, setIsLoading] = useState(false)
@@ -34,6 +34,10 @@ export default function PostForm({ user }: { user: any }) {
             // Clear form after successful submission
             setTitle('')
             setContent('')
+
+            // Refresh the posts list
+            onPostCreated()
+
             alert('Post created successfully!')
         } catch (error) {
             console.error('Error creating post:', error)
@@ -42,6 +46,7 @@ export default function PostForm({ user }: { user: any }) {
             setIsLoading(false)
         }
     }
+
     return (
         <form onSubmit={handleSubmit} className="space-y-4 mb-8">
             <div>

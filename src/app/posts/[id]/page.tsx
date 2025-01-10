@@ -12,6 +12,7 @@ export default function PostDetail({ params }: { params: { id: string } }) {
     const [newComment, setNewComment] = useState('')
     const [user, setUser] = useState<any>(null)
     const router = useRouter()
+    // @ts-ignore
     const postId = React.use(params).id  // Fix for the params warning
 
     const goBack = () => {

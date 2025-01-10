@@ -11,6 +11,11 @@ export default function Home() {
     const [isDropdownOpen, setIsDropdownOpen] = useState(false)
     const [viewMode, setViewMode] = useState<'all' | 'my-posts'>('all')
     const router = useRouter()
+    const [refreshKey, setRefreshKey] = useState(0)
+
+    const refreshPosts = () => {
+        setRefreshKey(prev => prev + 1)
+    }
 
     useEffect(() => {
         const userData = sessionStorage.getItem('user')
@@ -77,8 +82,9 @@ export default function Home() {
             </nav>
 
             <div className="max-w-4xl mx-auto py-8 px-4">
-                <PostForm user={user} />
-                <PostList viewMode={viewMode} currentUser={user} />
+                <PostForm user={user} onPostCreated={refreshPosts}  />
+                <PostList viewMode={viewMode} currentUser={user} refreshKey={refreshKey}
+                />
             </div>
         </div>
     )

@@ -8,11 +8,12 @@ export async function GET(
     { params }: { params: { id: string } }
 ) {
     try {
+        const { id } = await params  // Await params before destructuring
         const client = await clientPromise
         const db = client.db("reddit-clone")
 
         const post = await db.collection("posts").findOne({
-            _id: new ObjectId(params.id)
+            _id: new ObjectId(id)
         })
 
         if (!post) {

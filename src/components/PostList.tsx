@@ -7,11 +7,17 @@ import type { Post } from '@/types'
 interface PostListProps {
     viewMode: 'all' | 'my-posts'
     currentUser: any
+    refreshKey: number
 }
 
-export default function PostList({ viewMode, currentUser }: PostListProps) {
+interface VoteStatus {
+    [key: string]: 1 | -1 | null;
+}
+
+export default function PostList({ viewMode, currentUser, refreshKey }: PostListProps) {
     const [posts, setPosts] = useState<Post[]>([])
     const [loading, setLoading] = useState(true)
+    const [userVotes, setUserVotes] = useState<VoteStatus>({})
 
     const fetchPosts = async () => {
         try {
@@ -21,6 +27,16 @@ export default function PostList({ viewMode, currentUser }: PostListProps) {
             const response = await fetch(url)
             const data = await response.json()
             setPosts(data)
+
+            // Create a map of user's votes
+            const votes: VoteStatus = {};
+            data.forEach((post: Post) => {
+                const userVote = post.voters?.find(voter => voter.userId === currentUser.id);
+                if (userVote) {
+                    votes[post._id] = userVote.vote;
+                }
+            });
+            setUserVotes(votes);
         } catch (error) {
             console.error('Error fetching posts:', error)
         } finally {
@@ -30,11 +46,15 @@ export default function PostList({ viewMode, currentUser }: PostListProps) {
 
     useEffect(() => {
         fetchPosts()
-    }, [viewMode, currentUser.id])
+    }, [viewMode, currentUser.id, refreshKey])
 
     const handleVote = async (e: React.MouseEvent, postId: string, vote: 1 | -1) => {
-        e.preventDefault() // Prevent link navigation when voting
+        e.preventDefault()
+
         try {
+            // If clicking the same vote button, we're removing the vote
+            const newVote = userVotes[postId] === vote ? null : vote;
+
             const response = await fetch('/api/posts/vote', {
                 method: 'POST',
                 headers: {
@@ -43,7 +63,7 @@ export default function PostList({ viewMode, currentUser }: PostListProps) {
                 body: JSON.stringify({
                     postId,
                     userId: currentUser.id,
-                    vote
+                    vote: newVote
                 }),
             })
 
@@ -67,14 +87,28 @@ export default function PostList({ viewMode, currentUser }: PostListProps) {
                         <div className="flex flex-col items-center mr-4">
                             <button
                                 onClick={(e) => handleVote(e, post._id, 1)}
-                                className="text-gray-400 hover:text-blue-500 z-10"
+                                className={`transition-colors ${
+                                    userVotes[post._id] === 1
+                                        ? 'text-blue-500'
+                                        : 'text-gray-400 hover:text-blue-500'
+                                }`}
                             >
                                 ▲
                             </button>
-                            <span className="text-white my-1">{post.votes}</span>
+                            <span className={`my-1 font-bold ${
+                                userVotes[post._id] === 1 ? 'text-blue-500' :
+                                    userVotes[post._id] === -1 ? 'text-red-500' :
+                                        'text-white'
+                            }`}>
+                                {post.votes}
+                            </span>
                             <button
                                 onClick={(e) => handleVote(e, post._id, -1)}
-                                className="text-gray-400 hover:text-red-500 z-10"
+                                className={`transition-colors ${
+                                    userVotes[post._id] === -1
+                                        ? 'text-red-500'
+                                        : 'text-gray-400 hover:text-red-500'
+                                }`}
                             >
                                 ▼
                             </button>
