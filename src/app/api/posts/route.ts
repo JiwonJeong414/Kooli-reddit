@@ -1,20 +1,26 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import clientPromise from '@/lib/mongodb'
+import { ObjectId } from 'mongodb'
 
-export async function GET() {
+export async function GET(request: NextRequest) {
     try {
         const client = await clientPromise
         const db = client.db("reddit-clone")
+        const userId = request.nextUrl.searchParams.get('userId')
+
+        let query = {}
+        if (userId) {
+            query = { "author.id": userId }
+        }
 
         const posts = await db.collection("posts")
-            .find({})
-            .sort({ createdAt: -1 })
+            .find(query)
+            .sort({ votes: -1, createdAt: -1 })
             .toArray()
 
         return NextResponse.json(posts)
     } catch (error) {
-        console.error('Database error:', error)
         return NextResponse.json(
             { error: 'Failed to fetch posts' },
             { status: 500 }
@@ -30,15 +36,14 @@ export async function POST(request: NextRequest) {
 
         const post = {
             ...data,
-            createdAt: new Date(),
             votes: 0,
-            comments: []
+            voters: [],
+            createdAt: new Date()
         }
 
         const result = await db.collection("posts").insertOne(post)
-        return NextResponse.json({ success: true, post })
+        return NextResponse.json(result)
     } catch (error) {
-        console.error('Database error:', error)
         return NextResponse.json(
             { error: 'Failed to create post' },
             { status: 500 }
