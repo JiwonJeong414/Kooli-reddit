@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 
-export default function PostForm() {
+export default function PostForm({ user }: { user: any }) {
     const [title, setTitle] = useState('')
     const [content, setContent] = useState('')
     const [isLoading, setIsLoading] = useState(false)
@@ -20,6 +20,10 @@ export default function PostForm() {
                 body: JSON.stringify({
                     title,
                     content,
+                    author: {
+                        id: user.id,
+                        username: user.username
+                    }
                 }),
             })
 
@@ -38,7 +42,6 @@ export default function PostForm() {
             setIsLoading(false)
         }
     }
-
     return (
         <form onSubmit={handleSubmit} className="space-y-4 mb-8">
             <div>

@@ -28,14 +28,20 @@ export default function PostList() {
 
     if (loading) return <div>Loading...</div>
 
+
     return (
         <div className="space-y-4">
             {posts.map((post) => (
                 <article key={post._id} className="bg-gray-900 p-4 rounded-lg shadow border border-gray-800">
                     <h2 className="text-xl font-semibold text-white">{post.title}</h2>
                     <p className="text-gray-300 mt-2">{post.content}</p>
-                    <div className="text-sm text-gray-400 mt-4">
-                        {new Date(post.createdAt).toLocaleDateString()}
+                    <div className="flex items-center justify-between text-sm text-gray-400 mt-4">
+                        <div>
+                            Posted by {post.author?.username || 'Anonymous'}
+                        </div>
+                        <div>
+                            {new Date(post.createdAt).toLocaleDateString()}
+                        </div>
                     </div>
                 </article>
             ))}
