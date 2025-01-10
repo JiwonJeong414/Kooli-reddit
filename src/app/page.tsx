@@ -26,6 +26,19 @@ export default function Home() {
         }
     }, [router])
 
+    // Add click handler for closing dropdown when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            const target = event.target as HTMLElement
+            if (isDropdownOpen && !target.closest('.profile-dropdown')) {
+                setIsDropdownOpen(false)
+            }
+        }
+
+        document.addEventListener('click', handleClickOutside)
+        return () => document.removeEventListener('click', handleClickOutside)
+    }, [isDropdownOpen])
+
     if (!user) return null
 
     return (
@@ -49,12 +62,14 @@ export default function Home() {
                     </div>
                     <div className="flex items-center space-x-4">
                         <span className="text-gray-300">Welcome, {user.username}</span>
-                        <div
-                            className="relative"
-                            onMouseEnter={() => setIsDropdownOpen(true)}
-                            onMouseLeave={() => setIsDropdownOpen(false)}
-                        >
-                            <button className="text-gray-300 hover:text-white px-3 py-2 rounded-md">
+                        <div className="relative profile-dropdown">
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation()
+                                    setIsDropdownOpen(!isDropdownOpen)
+                                }}
+                                className={`text-gray-300 hover:text-white px-3 py-2 rounded-md ${isDropdownOpen ? 'bg-gray-800' : ''}`}
+                            >
                                 Profile
                             </button>
                             {isDropdownOpen && (
@@ -82,9 +97,8 @@ export default function Home() {
             </nav>
 
             <div className="max-w-4xl mx-auto py-8 px-4">
-                <PostForm user={user} onPostCreated={refreshPosts}  />
-                <PostList viewMode={viewMode} currentUser={user} refreshKey={refreshKey}
-                />
+                <PostForm user={user} onPostCreated={refreshPosts} />
+                <PostList viewMode={viewMode} currentUser={user} refreshKey={refreshKey} />
             </div>
         </div>
     )

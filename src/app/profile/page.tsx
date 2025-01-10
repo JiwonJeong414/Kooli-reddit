@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import PostList from '@/components/PostList'
 
@@ -16,6 +16,10 @@ export default function Profile() {
     const [loading, setLoading] = useState(true)
     const [stats, setStats] = useState({ posts: 0, comments: 0, totalVotes: 0 })
     const router = useRouter()
+
+    const goBack = () => {
+        router.back()
+    }
 
     // First useEffect for loading user data
     useEffect(() => {
@@ -53,6 +57,13 @@ export default function Profile() {
         <div className="min-h-screen bg-black py-8">
             <div className="max-w-4xl mx-auto px-4">
                 {/* Profile Card */}
+                <button
+                    onClick={goBack}
+                    className="text-blue-400 hover:text-blue-300 mb-4 flex items-center"
+                >
+                    <span className="mr-2">←</span> Back
+                </button>
+
                 <div className="bg-gray-900 rounded-lg shadow-lg p-6 mb-8">
                     <div className="flex items-start justify-between">
                         <div>
@@ -93,7 +104,7 @@ export default function Profile() {
                 {/* User's Posts */}
                 <div>
                     <h2 className="text-xl font-semibold text-white mb-4">Your Posts</h2>
-                    <PostList viewMode="my-posts" currentUser={user} />
+                    <PostList viewMode="my-posts" currentUser={user} refreshKey={0}/>
                 </div>
             </div>
         </div>
