@@ -23,9 +23,11 @@ export interface Post {
 export interface Comment {
     _id: string;
     content: string;
-    author: User;
-    post: string;
-    parentComment?: string;
+    postId: string;
+    author: {
+        id: string;
+        username: string;
+    };
     votes: number;
     createdAt: Date;
 }
