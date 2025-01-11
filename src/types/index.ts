@@ -40,3 +40,13 @@ export interface Comment {
     voters: Vote[];
     createdAt: Date;
 }
+
+export interface Drama {
+    id: string;
+    title: string;
+    year: number;
+    episodes: number;
+    rating: number;
+    description: string;
+    imageUrl: string;
+}

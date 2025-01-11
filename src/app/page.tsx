@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import PostForm from '@/components/PostForm'
 import PostList from '@/components/PostList'
 import Link from 'next/link'
+import DramaList from "@/components/DramaList";
 
 export default function Home() {
     const [user, setUser] = useState<any>(null)
@@ -97,8 +98,9 @@ export default function Home() {
             </nav>
 
             <div className="max-w-4xl mx-auto py-8 px-4">
-                <PostForm user={user} onPostCreated={refreshPosts} />
-                <PostList viewMode={viewMode} currentUser={user} refreshKey={refreshKey} />
+                <PostForm user={user} onPostCreated={refreshPosts}/>
+                <PostList viewMode={viewMode} currentUser={user} refreshKey={refreshKey}/>
+                <DramaList/>
             </div>
         </div>
     )
