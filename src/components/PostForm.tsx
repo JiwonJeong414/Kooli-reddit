@@ -2,7 +2,13 @@
 
 import {useState} from 'react'
 
-export default function PostForm({user, onPostCreated}: { user: any; onPostCreated: () => void; }) {
+export default function PostForm({user, dramaId,dramaSlug, dramaTitle, onPostCreated }: {
+    user: any;
+    dramaId?: string;
+    dramaSlug?: string;
+    dramaTitle?: string;
+    onPostCreated: () => void;
+}) {
     const [title, setTitle] = useState('')
     const [content, setContent] = useState('')
     const [isLoading, setIsLoading] = useState(false)
@@ -23,7 +29,10 @@ export default function PostForm({user, onPostCreated}: { user: any; onPostCreat
                     author: {
                         id: user.id,
                         username: user.username
-                    }
+                    },
+                    dramaId,
+                    dramaSlug,
+                    dramaTitle
                 }),
             })
 
@@ -31,14 +40,9 @@ export default function PostForm({user, onPostCreated}: { user: any; onPostCreat
                 throw new Error('Failed to create post')
             }
 
-            // Clear form after successful submission
             setTitle('')
             setContent('')
-
-            // Refresh the posts list
             onPostCreated()
-
-            alert('Post created successfully!')
         } catch (error) {
             console.error('Error creating post:', error)
             alert('Failed to create post')

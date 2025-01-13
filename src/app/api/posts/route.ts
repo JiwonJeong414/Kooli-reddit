@@ -34,6 +34,20 @@ export async function POST(request: NextRequest) {
         const db = client.db("reddit-clone")
         const data = await request.json()
 
+        // If dramaId is provided, verify the drama exists
+        if (data.dramaId) {
+            const drama = await db.collection("dramas").findOne({
+                _id: new ObjectId(data.dramaId)
+            })
+
+            if (!drama) {
+                return NextResponse.json(
+                    { error: 'Drama not found' },
+                    { status: 404 }
+                )
+            }
+        }
+
         const post = {
             ...data,
             votes: 0,

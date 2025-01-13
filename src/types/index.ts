@@ -42,11 +42,27 @@ export interface Comment {
 }
 
 export interface Drama {
-    id: string;
+    _id?: string;  // String representation of ObjectId for client-side
     title: string;
-    year: number;
-    episodes: number;
-    rating: number;
-    description: string;
+    slug: string;
     imageUrl: string;
+    link: string;
+    memberCount: number;
+    createdAt: Date;
+}
+
+export interface Post {
+    _id: string;
+    title: string;
+    content: string;
+    author?: {
+        id: string;
+        username: string;
+    };
+    dramaId?: string;  // Reference to the drama
+    dramaSlug?: string;  // URL-friendly drama name
+    dramaTitle?: string;  // Drama title for display
+    votes: number;
+    voters: Vote[];
+    createdAt: string | Date;
 }

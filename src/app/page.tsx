@@ -5,12 +5,14 @@ import { useRouter } from 'next/navigation'
 import PostForm from '@/components/PostForm'
 import PostList from '@/components/PostList'
 import Link from 'next/link'
-import DramaList from "@/components/DramaList";
+import type { Drama } from '@/types'
 
 export default function Home() {
     const [user, setUser] = useState<any>(null)
     const [isDropdownOpen, setIsDropdownOpen] = useState(false)
     const [viewMode, setViewMode] = useState<'all' | 'my-posts'>('all')
+    const [dramas, setDramas] = useState<Drama[]>([])
+    const [isLoading, setIsLoading] = useState(true)
     const router = useRouter()
     const [refreshKey, setRefreshKey] = useState(0)
 
@@ -18,6 +20,7 @@ export default function Home() {
         setRefreshKey(prev => prev + 1)
     }
 
+    // Fetch user data
     useEffect(() => {
         const userData = sessionStorage.getItem('user')
         if (!userData) {
@@ -27,7 +30,24 @@ export default function Home() {
         }
     }, [router])
 
-    // Add click handler for closing dropdown when clicking outside
+    // Fetch dramas
+    useEffect(() => {
+        const fetchDramas = async () => {
+            try {
+                const response = await fetch('/api/dramas')
+                const data = await response.json()
+                setDramas(data)
+            } catch (error) {
+                console.error('Error fetching dramas:', error)
+            } finally {
+                setIsLoading(false)
+            }
+        }
+
+        fetchDramas()
+    }, [])
+
+    // Handle clicking outside dropdown
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             const target = event.target as HTMLElement
@@ -44,10 +64,13 @@ export default function Home() {
 
     return (
         <div className="min-h-screen bg-black">
-            <nav className="bg-gray-900 shadow-lg">
-                <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
+            {/* Navigation Bar */}
+            <nav className="bg-gray-900 shadow-lg sticky top-0 z-50">
+                <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
                     <div className="flex items-center space-x-4">
-                        <h1 className="text-xl font-bold text-white">Reddit Clone</h1>
+                        <Link href="/" className="text-xl font-bold text-white hover:text-blue-400">
+                            K-Drama Reddit
+                        </Link>
                         <button
                             onClick={() => setViewMode('all')}
                             className={`px-3 py-1 rounded-md ${viewMode === 'all' ? 'bg-blue-600 text-white' : 'text-gray-300 hover:text-white'}`}
@@ -97,10 +120,80 @@ export default function Home() {
                 </div>
             </nav>
 
-            <div className="max-w-4xl mx-auto py-8 px-4">
-                <PostForm user={user} onPostCreated={refreshPosts}/>
-                <PostList viewMode={viewMode} currentUser={user} refreshKey={refreshKey}/>
-                <DramaList/>
+            {/* Main Content */}
+            <div className="max-w-6xl mx-auto py-8 px-4 flex gap-6">
+                {/* Drama Subreddits Sidebar */}
+                <div className="w-64 flex-shrink-0">
+                    <div className="bg-gray-900 rounded-lg p-4 sticky top-20">
+                        <h2 className="text-lg font-semibold text-white mb-4">Drama Communities</h2>
+                        {isLoading ? (
+                            <div className="text-gray-400">Loading dramas...</div>
+                        ) : (
+                            <div className="space-y-2 max-h-[70vh] overflow-y-auto">
+                                {dramas.map((drama) => (
+                                    <Link
+                                        key={drama.slug}
+                                        href={`/k/${drama.slug}`}
+                                        className="flex items-center space-x-2 p-2 rounded hover:bg-gray-800 group"
+                                    >
+                                        <img
+                                            src={drama.imageUrl}
+                                            alt={drama.title}
+                                            className="w-8 h-8 rounded object-cover"
+                                        />
+                                        <div>
+                                            <div className="text-gray-300 group-hover:text-white text-sm">
+                                                k/{drama.title}
+                                            </div>
+                                            <div className="text-gray-500 text-xs">
+                                                {drama.memberCount?.toLocaleString()} members
+                                            </div>
+                                        </div>
+                                    </Link>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                {/* Main Content Area */}
+                <div className="flex-1">
+                    <PostForm user={user} onPostCreated={refreshPosts}/>
+                    <div className="mt-6">
+                        <PostList
+                            viewMode={viewMode}
+                            currentUser={user}
+                            refreshKey={refreshKey}
+                        />
+                    </div>
+                </div>
+
+                {/* Trending Dramas Sidebar */}
+                <div className="w-64 flex-shrink-0">
+                    <div className="bg-gray-900 rounded-lg p-4 sticky top-20">
+                        <h2 className="text-lg font-semibold text-white mb-4">Trending Dramas</h2>
+                        {isLoading ? (
+                            <div className="text-gray-400">Loading trends...</div>
+                        ) : (
+                            <div className="space-y-3">
+                                {dramas.slice(0, 5).map((drama) => (
+                                    <Link
+                                        key={drama.slug}
+                                        href={`/k/${drama.slug}`}
+                                        className="block p-2 rounded hover:bg-gray-800"
+                                    >
+                                        <div className="text-gray-300 hover:text-white">
+                                            {drama.title}
+                                        </div>
+                                        <div className="text-gray-500 text-sm">
+                                            {drama.memberCount?.toLocaleString()} active users
+                                        </div>
+                                    </Link>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                </div>
             </div>
         </div>
     )

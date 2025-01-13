@@ -5,25 +5,32 @@ import Link from 'next/link'
 import type { Post } from '@/types'
 
 interface PostListProps {
-    viewMode: 'all' | 'my-posts'
+    viewMode: 'all' | 'my-posts' | 'drama'  // Added 'drama' mode
     currentUser: any
     refreshKey: number
+    dramaSlug?: string  // Optional prop for drama-specific posts
 }
 
 interface VoteStatus {
     [key: string]: 1 | -1 | null;
 }
 
-export default function PostList({ viewMode, currentUser, refreshKey }: PostListProps) {
+export default function PostList({ viewMode, currentUser, refreshKey, dramaSlug }: PostListProps) {
     const [posts, setPosts] = useState<Post[]>([])
     const [loading, setLoading] = useState(true)
     const [userVotes, setUserVotes] = useState<VoteStatus>({})
 
     const fetchPosts = async () => {
         try {
-            const url = viewMode === 'my-posts'
-                ? `/api/posts?userId=${currentUser.id}`
-                : '/api/posts'
+            let url = '/api/posts'
+
+            // Determine the URL based on viewMode and dramaSlug
+            if (viewMode === 'my-posts') {
+                url += `?userId=${currentUser.id}`
+            } else if (viewMode === 'drama' && dramaSlug) {
+                url += `?dramaSlug=${dramaSlug}`
+            }
+
             const response = await fetch(url)
             const data = await response.json()
             setPosts(data)
@@ -46,7 +53,7 @@ export default function PostList({ viewMode, currentUser, refreshKey }: PostList
 
     useEffect(() => {
         fetchPosts()
-    }, [viewMode, currentUser.id, refreshKey])
+    }, [viewMode, currentUser.id, refreshKey, dramaSlug])
 
     const handleVote = async (e: React.MouseEvent, postId: string, vote: 1 | -1) => {
         e.preventDefault()
@@ -118,6 +125,15 @@ export default function PostList({ viewMode, currentUser, refreshKey }: PostList
                                 <h2 className="text-xl font-semibold text-white hover:text-blue-400">
                                     {post.title}
                                 </h2>
+                                {/* Show drama info if we're not in drama-specific view */}
+                                {viewMode !== 'drama' && post.dramaTitle && (
+                                    <Link
+                                        href={`/k/${post.dramaSlug}`}
+                                        className="text-sm text-blue-400 hover:text-blue-300 mt-1 block"
+                                    >
+                                        in k/{post.dramaTitle}
+                                    </Link>
+                                )}
                                 <p className="text-gray-300 mt-2">{post.content}</p>
                                 <div className="flex items-center justify-between text-sm text-gray-400 mt-4">
                                     <div>Posted by {post.author?.username || 'Anonymous'}</div>
@@ -129,7 +145,13 @@ export default function PostList({ viewMode, currentUser, refreshKey }: PostList
                 </article>
             ))}
             {posts.length === 0 && (
-                <p className="text-center text-gray-400">No posts yet</p>
+                <p className="text-center text-gray-400">
+                    {viewMode === 'drama'
+                        ? 'No posts in this drama yet. Be the first to post!'
+                        : viewMode === 'my-posts'
+                            ? 'You haven\'t created any posts yet'
+                            : 'No posts yet'}
+                </p>
             )}
         </div>
     )
