@@ -68,8 +68,16 @@ export default function Home() {
             <nav className="bg-gray-900 shadow-lg sticky top-0 z-50">
                 <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
                     <div className="flex items-center space-x-4">
+                        {/* Kooli Logo */}
+                        <Link href="/">
+                            <img
+                                src="/koolilogo.webp"
+                                alt="Kooli Logo"
+                                className="w-10 h-10 object-contain"
+                            />
+                        </Link>
                         <Link href="/" className="text-xl font-bold text-white hover:text-blue-400">
-                            K-Drama Reddit
+                            K-Drama
                         </Link>
                         <button
                             onClick={() => setViewMode('all')}

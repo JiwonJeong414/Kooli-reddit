@@ -8,15 +8,18 @@ export async function GET(request: NextRequest) {
         const client = await clientPromise
         const db = client.db("reddit-clone")
         const userId = request.nextUrl.searchParams.get('userId')
+        const dramaSlug = request.nextUrl.searchParams.get('dramaSlug')
 
         let query = {}
         if (userId) {
             query = { "author.id": userId }
+        } else if (dramaSlug) {
+            query = { dramaSlug }
         }
 
         const posts = await db.collection("posts")
             .find(query)
-            .sort({ votes: -1, createdAt: -1 })
+            .sort({ createdAt: -1 })
             .toArray()
 
         return NextResponse.json(posts)
@@ -34,20 +37,6 @@ export async function POST(request: NextRequest) {
         const db = client.db("reddit-clone")
         const data = await request.json()
 
-        // If dramaId is provided, verify the drama exists
-        if (data.dramaId) {
-            const drama = await db.collection("dramas").findOne({
-                _id: new ObjectId(data.dramaId)
-            })
-
-            if (!drama) {
-                return NextResponse.json(
-                    { error: 'Drama not found' },
-                    { status: 404 }
-                )
-            }
-        }
-
         const post = {
             ...data,
             votes: 0,
@@ -56,7 +45,10 @@ export async function POST(request: NextRequest) {
         }
 
         const result = await db.collection("posts").insertOne(post)
-        return NextResponse.json(result)
+        return NextResponse.json({
+            _id: result.insertedId,
+            ...post
+        })
     } catch (error) {
         return NextResponse.json(
             { error: 'Failed to create post' },

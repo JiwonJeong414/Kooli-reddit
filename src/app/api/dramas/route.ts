@@ -1,12 +1,14 @@
 import { NextResponse } from 'next/server'
 import * as cheerio from 'cheerio'
 import clientPromise from '@/lib/mongodb'
-import { ObjectId } from 'mongodb'
-import type { Drama } from '@/types'
 
-// Define a type for MongoDB Drama document
-interface DramaDocument {
-    _id?: ObjectId;
+function createSlug(title: string): string {
+    return title.toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)/g, '')
+}
+
+interface Drama {
     title: string;
     slug: string;
     imageUrl: string;
@@ -15,11 +17,6 @@ interface DramaDocument {
     createdAt: Date;
 }
 
-function createSlug(title: string): string {
-    return title.toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/(^-|-$)/g, '')
-}
 
 export async function GET() {
     try {
@@ -33,12 +30,7 @@ export async function GET() {
             .toArray()
 
         if (cachedDramas.length > 0) {
-            // Convert MongoDB documents to Drama type
-            const dramas: { [p: string]: any; _id: string }[] = cachedDramas.map(drama => ({
-                ...drama,
-                _id: drama._id.toString()
-            }))
-            return NextResponse.json(dramas)
+            return NextResponse.json(cachedDramas)
         }
 
         // If no cached dramas, scrape and store them
@@ -46,35 +38,29 @@ export async function GET() {
         const html = await response.text()
         const $ = cheerio.load(html)
 
-        // Create array of DramaDocument for MongoDB
-        const dramaDocuments: DramaDocument[] = []
+        const dramas: Drama[] = []
 
         $('.ThumbnailLink').each((_, element) => {
             const link = $(element).find('a').attr('href') || ''
-            const title = link.split('/').pop()?.replace(/-/g, ' ') || ''
+            const rawTitle = link.split('/').pop() || ''
+            const title = rawTitle.replace(/-/g, ' ').replace(/^\w|\s\w/g, letter => letter.toUpperCase())
             const imageUrl = $(element).find('.Thumbnail img').attr('src') || ''
             const slug = createSlug(title)
 
-            dramaDocuments.push({
+            dramas.push({
                 title,
                 slug,
                 imageUrl,
                 link,
-                memberCount: Math.floor(Math.random() * 10000),
+                memberCount: 0,
                 createdAt: new Date()
             })
         })
 
         // Store dramas in MongoDB
-        if (dramaDocuments.length > 0) {
-            await db.collection("dramas").insertMany(dramaDocuments)
+        if (dramas.length > 0) {
+            await db.collection("dramas").insertMany(dramas)
         }
-
-        // Convert to Drama type for response
-        const dramas: Drama[] = dramaDocuments.map(drama => ({
-            ...drama,
-            _id: drama._id?.toString()
-        }))
 
         return NextResponse.json(dramas)
     } catch (error) {

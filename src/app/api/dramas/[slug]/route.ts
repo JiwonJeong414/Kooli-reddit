@@ -20,14 +20,13 @@ export async function GET(
             )
         }
 
-        // Get posts for this drama
         const posts = await db.collection("posts")
             .find({ dramaSlug: slug })
-            .sort({ votes: -1, createdAt: -1 })
+            .sort({ createdAt: -1 })
             .toArray()
 
         return NextResponse.json({
-            drama,
+            ...drama,
             posts
         })
     } catch (error) {

@@ -4,9 +4,10 @@ export interface User {
     email: string;
     password: string;
     createdAt: Date;
-    updatedAt: Date;
-    isActive: boolean;
-    refreshToken?: string;
+    joinedDramas: {
+        slug: string;
+        joinedAt: Date;
+    }[];
 }
 
 export interface Vote {
@@ -42,7 +43,7 @@ export interface Comment {
 }
 
 export interface Drama {
-    _id?: string;  // String representation of ObjectId for client-side
+    _id?: string;
     title: string;
     slug: string;
     imageUrl: string;

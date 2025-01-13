@@ -31,3 +31,74 @@ export async function GET(
         )
     }
 }
+
+export async function DELETE(
+    request: NextRequest,
+    { params }: { params: { id: string } }
+) {
+    try {
+        const client = await clientPromise
+        const db = client.db("reddit-clone")
+
+        const result = await db.collection("posts").deleteOne({
+            _id: new ObjectId(params.id)
+        })
+
+        if (result.deletedCount === 0) {
+            return NextResponse.json(
+                { error: 'Post not found' },
+                { status: 404 }
+            )
+        }
+
+        return NextResponse.json({ success: true })
+    } catch (error) {
+        return NextResponse.json(
+            { error: 'Failed to delete post' },
+            { status: 500 }
+        )
+    }
+}
+
+export async function PUT(
+    request: NextRequest,
+    { params }: { params: { id: string } }
+) {
+    try {
+        const data = await request.json()
+        const { title, content } = data
+
+        if (!title || !content) {
+            return NextResponse.json(
+                { error: 'Title and content are required' },
+                { status: 400 }
+            )
+        }
+
+        const client = await clientPromise
+        const db = client.db("reddit-clone")
+
+        const result = await db.collection("posts").updateOne(
+            { _id: new ObjectId(params.id) },
+            { $set: {
+                    title,
+                    content,
+                    editedAt: new Date()
+                }}
+        )
+
+        if (result.matchedCount === 0) {
+            return NextResponse.json(
+                { error: 'Post not found' },
+                { status: 404 }
+            )
+        }
+
+        return NextResponse.json({ success: true })
+    } catch (error) {
+        return NextResponse.json(
+            { error: 'Failed to update post' },
+            { status: 500 }
+        )
+    }
+}

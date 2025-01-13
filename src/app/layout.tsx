@@ -13,10 +13,12 @@ export default function RootLayout({
 }) {
     return (
         <html lang="en">
+        <head>
+            {/* Add Favicon */}
+            <link rel="icon" href="/koolilogo.webp" type="image/webp" />
+        </head>
         <body className="bg-black min-h-screen text-white">
-        <main>
-            {children}
-        </main>
+        <main>{children}</main>
         </body>
         </html>
     )
