@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import type { Post } from '@/types'
+import { ChevronUp, ChevronDown, Pencil, Trash } from 'lucide-react';
+
 
 interface PostListProps {
     viewMode: 'all' | 'my-posts' | 'drama'
@@ -39,7 +41,9 @@ export default function PostList({ viewMode, currentUser, refreshKey, dramaSlug 
 
             const response = await fetch(url)
             const data = await response.json()
-            setPosts(data)
+            // Sort posts by votes in descending order
+            const sortedPosts = data.sort((a: Post, b: Post) => b.votes - a.votes)
+            setPosts(sortedPosts)
 
             // Fetch colors for each unique drama
             if (viewMode === 'all') {
@@ -161,76 +165,79 @@ export default function PostList({ viewMode, currentUser, refreshKey, dramaSlug 
     }
 
     if (loading) return (
-        <div className="space-y-4">
+        <div className="divide-y divide-gray-800">
             {[1, 2, 3].map((i) => (
-                <div key={i} className="bg-gray-900 p-4 rounded-lg animate-pulse">
-                    <div className="h-6 bg-gray-800 rounded w-3/4 mb-4"></div>
-                    <div className="h-4 bg-gray-800 rounded w-1/2"></div>
+                <div key={i} className="p-4 animate-pulse">
+                    <div className="h-6 bg-gray-800 rounded w-3/4"></div>
+                    <div className="h-4 bg-gray-800 rounded w-1/2 mt-3"></div>
                 </div>
             ))}
         </div>
-    )
+    );
 
     return (
-        <div className="space-y-4">
+        <div className="divide-y divide-gray-800/50 rounded-lg overflow-hidden">
             {posts.map((post) => (
-                <article key={post._id} className="bg-gray-900 p-4 rounded-lg shadow border border-gray-800 hover:border-gray-700 transition-colors">
-                    <div className="flex">
-                        <div className="flex flex-col items-center mr-4">
+                <article
+                    key={post._id}
+                    className="hover:bg-gray-800/50 transition-colors"
+                >
+                    <div className="flex items-start p-4">
+                        <div className="flex flex-col items-center mr-6">
                             <button
                                 onClick={(e) => handleVote(e, post._id, 1)}
-                                className={`transition-colors ${
+                                className={`${
                                     userVotes[post._id] === 1
-                                        ? 'text-blue-500'
-                                        : 'text-gray-400 hover:text-blue-500'
+                                        ? 'text-blue-400'
+                                        : 'text-gray-500 hover:text-gray-400'
                                 }`}
                             >
-                                ▲
+                                <ChevronUp size={20} />
                             </button>
-                            <span className={`my-1 font-bold ${
-                                userVotes[post._id] === 1 ? 'text-blue-500' :
-                                    userVotes[post._id] === -1 ? 'text-red-500' :
-                                        'text-white'
+                            <span className={`text-sm font-medium my-1 ${
+                                userVotes[post._id] === 1 ? 'text-blue-400' :
+                                    userVotes[post._id] === -1 ? 'text-red-400' :
+                                        'text-gray-400'
                             }`}>
                                 {post.votes}
                             </span>
                             <button
                                 onClick={(e) => handleVote(e, post._id, -1)}
-                                className={`transition-colors ${
+                                className={`${
                                     userVotes[post._id] === -1
-                                        ? 'text-red-500'
-                                        : 'text-gray-400 hover:text-red-500'
+                                        ? 'text-red-400'
+                                        : 'text-gray-500 hover:text-gray-400'
                                 }`}
                             >
-                                ▼
+                                <ChevronDown size={20} />
                             </button>
                         </div>
 
-                        <div className="flex-1">
+                        <div className="flex-1 min-w-0">
                             {editingPost?._id === post._id ? (
                                 <div className="space-y-3">
                                     <input
                                         type="text"
                                         value={editTitle}
                                         onChange={(e) => setEditTitle(e.target.value)}
-                                        className="w-full p-2 bg-gray-800 border border-gray-700 rounded text-white"
+                                        className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded text-white"
                                     />
                                     <textarea
                                         value={editContent}
                                         onChange={(e) => setEditContent(e.target.value)}
-                                        className="w-full p-2 bg-gray-800 border border-gray-700 rounded text-white"
+                                        className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded text-white"
                                         rows={4}
                                     />
-                                    <div className="flex items-center space-x-2">
+                                    <div className="flex items-center gap-3">
                                         <button
                                             onClick={() => handleSaveEdit(post._id)}
-                                            className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
+                                            className="px-4 py-2 bg-blue-600 text-white rounded"
                                         >
                                             Save
                                         </button>
                                         <button
                                             onClick={handleCancelEdit}
-                                            className="px-3 py-1 bg-gray-700 text-white rounded hover:bg-gray-600"
+                                            className="px-4 py-2 bg-gray-700 text-white rounded"
                                         >
                                             Cancel
                                         </button>
@@ -238,38 +245,40 @@ export default function PostList({ viewMode, currentUser, refreshKey, dramaSlug 
                                 </div>
                             ) : (
                                 <>
-                                    {viewMode === 'all' && post.dramaSlug && (
-                                        <Link
-                                            href={`/k/${post.dramaSlug}`}
-                                            style={{ color: dramaColors[post.dramaSlug] }}
-                                            className="text-xs font-medium hover:opacity-80 mb-2 inline-block"
-                                        >
-                                            k/{post.dramaTitle}
-                                        </Link>
-                                    )}
-                                    <Link href={`/posts/${post._id}`}>
-                                        <h2 className="text-xl font-semibold text-white hover:text-blue-400">
+                                    <Link
+                                        href={post.dramaSlug ? `/k/${post.dramaSlug}` : '/k/general'}
+                                        style={post.dramaSlug ? { color: dramaColors[post.dramaSlug] } : undefined}
+                                        className={`text-sm font-medium hover:opacity-80 mb-2 inline-block ${
+                                            !post.dramaSlug ? 'text-gray-500' : ''
+                                        }`}
+                                    >
+                                        k/{post.dramaTitle || 'general'}
+                                    </Link>
+                                    <Link href={`/posts/${post._id}`} className="block">
+                                        <h2 className="text-lg text-white font-semibold leading-snug">
                                             {post.title}
                                         </h2>
-                                        <p className="text-gray-300 mt-2">{post.content}</p>
+                                        <p className="text-gray-400 mt-2">{post.content}</p>
                                     </Link>
-                                    <div className="flex items-center justify-between mt-4">
-                                        <div className="text-sm text-gray-400">
-                                            Posted by u/{post.author?.username || 'Anonymous'} •{' '}
+                                    <div className="flex items-center justify-between mt-3 text-sm text-gray-500">
+                                        <div>
+                                            Posted by u/{post.author?.username || 'Anonymous'} • {' '}
                                             {new Date(post.createdAt).toLocaleDateString()}
                                         </div>
                                         {currentUser.id === post.author?.id && (
-                                            <div className="flex items-center space-x-2">
+                                            <div className="flex items-center gap-3">
                                                 <button
                                                     onClick={() => handleEdit(post)}
-                                                    className="text-xs text-blue-400 hover:text-blue-300"
+                                                    className="text-blue-400 hover:text-blue-300 flex items-center gap-1"
                                                 >
+                                                    <Pencil size={14} />
                                                     Edit
                                                 </button>
                                                 <button
                                                     onClick={() => handleDelete(post._id)}
-                                                    className="text-xs text-red-400 hover:text-red-300"
+                                                    className="text-red-400 hover:text-red-300 flex items-center gap-1"
                                                 >
+                                                    <Trash size={14} />
                                                     Delete
                                                 </button>
                                             </div>
@@ -282,8 +291,10 @@ export default function PostList({ viewMode, currentUser, refreshKey, dramaSlug 
                 </article>
             ))}
             {posts.length === 0 && (
-                <p className="text-center text-gray-400">No posts yet</p>
+                <div className="text-center py-8">
+                    <p className="text-gray-500">No posts yet</p>
+                </div>
             )}
         </div>
-    )
+    );
 }
