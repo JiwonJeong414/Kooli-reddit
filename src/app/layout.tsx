@@ -2,8 +2,8 @@ import type { Metadata } from 'next'
 import './globals.css'
 
 export const metadata: Metadata = {
-    title: 'Reddit Clone',
-    description: 'A Reddit clone built with Next.js',
+    title: 'Kooli Forum',
+    description: 'A Kooli Forum built with Next.js',
 }
 
 export default function RootLayout({

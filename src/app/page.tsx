@@ -8,7 +8,6 @@ import Link from 'next/link'
 import { ChevronLeft, ChevronRight, Users, LogOut, User, Flame, TrendingUp, ArrowUpCircle } from 'lucide-react'
 import type { Drama } from '@/types'
 
-// Custom scrollbar styles
 const customScrollbarStyle = `
   .custom-scrollbar::-webkit-scrollbar {
     width: 6px;
@@ -32,8 +31,16 @@ export default function Home() {
     const router = useRouter()
     const [refreshKey, setRefreshKey] = useState(0)
 
+    const handleRestrictedAction = (action: Function) => {
+        if (!user) {
+            router.push('/login')
+        } else {
+            action()
+        }
+    }
+
     useEffect(() => {
-        // Auto advance slides
+        if (dramas.length === 0) return
         const timer = setInterval(() => {
             setCurrentSlide(prev => (prev + 1) % dramas.length)
         }, 5000)
@@ -42,12 +49,10 @@ export default function Home() {
 
     useEffect(() => {
         const userData = sessionStorage.getItem('user')
-        if (!userData) {
-            router.push('/login')
-        } else {
+        if (userData) {
             setUser(JSON.parse(userData))
         }
-    }, [router])
+    }, [])
 
     useEffect(() => {
         const fetchDramas = async () => {
@@ -89,20 +94,14 @@ export default function Home() {
         setCurrentSlide((prev) => (prev - 1 + dramas.length) % dramas.length)
     }
 
-    if (!user) return null
-
-
-
     return (
         <div className="min-h-screen bg-gray-900">
             <style>{customScrollbarStyle}</style>
 
-            {/* Navigation Bar - Removed backdrop blur */}
             <nav className="bg-gray-900 shadow-lg sticky top-0 z-50 border-b border-gray-800">
                 <div className="max-w-5xl mx-auto px-4 py-4">
                     <div className="flex items-center">
                         <div className="flex items-center gap-8">
-                            {/* Logo - Simplified hover */}
                             <Link href="/" className="flex items-center space-x-3">
                                 <img
                                     src="/koolilogo.webp"
@@ -114,10 +113,9 @@ export default function Home() {
                                 </span>
                             </Link>
 
-                            {/* Navigation buttons - Simplified transitions */}
                             <div className="flex items-center space-x-2">
                                 <button
-                                    onClick={() => setViewMode('all')}
+                                    onClick={() => handleRestrictedAction(() => setViewMode('all'))}
                                     className={`px-6 py-2 rounded-full ${
                                         viewMode === 'all'
                                             ? 'bg-blue-600 text-white'
@@ -127,7 +125,7 @@ export default function Home() {
                                     All Posts
                                 </button>
                                 <button
-                                    onClick={() => setViewMode('my-posts')}
+                                    onClick={() => handleRestrictedAction(() => setViewMode('my-posts'))}
                                     className={`px-6 py-2 rounded-full ${
                                         viewMode === 'my-posts'
                                             ? 'bg-blue-600 text-white'
@@ -139,48 +137,58 @@ export default function Home() {
                             </div>
                         </div>
 
-                        {/* User section - Simplified */}
                         <div className="flex items-center space-x-4 ml-auto">
-                            <span className="text-gray-300">Welcome, {user?.username}</span>
-                            <div className="relative profile-dropdown">
-                                <button
-                                    onClick={(e) => {
-                                        e.stopPropagation()
-                                        setIsDropdownOpen(!isDropdownOpen)
-                                    }}
-                                    className={`px-4 py-2 rounded-md ${
-                                        isDropdownOpen ? 'bg-gray-800' : 'text-gray-300 hover:bg-gray-800'
-                                    }`}
-                                >
-                                    Profile
-                                </button>
-
-                                {isDropdownOpen && (
-                                    <div className="absolute right-0 mt-2 w-48 bg-gray-800 rounded-md shadow-lg">
-                                        <Link
-                                            href="/profile"
-                                            className="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700"
-                                        >
-                                            View Profile
-                                        </Link>
+                            {user ? (
+                                <>
+                                    <span className="text-gray-300">Welcome, {user.username}</span>
+                                    <div className="relative profile-dropdown">
                                         <button
-                                            onClick={() => {
-                                                sessionStorage.removeItem('user')
-                                                router.push('/login')
+                                            onClick={(e) => {
+                                                e.stopPropagation()
+                                                setIsDropdownOpen(!isDropdownOpen)
                                             }}
-                                            className="block w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-gray-700"
+                                            className={`px-4 py-2 rounded-md ${
+                                                isDropdownOpen ? 'bg-gray-800' : 'text-gray-300 hover:bg-gray-800'
+                                            }`}
                                         >
-                                            Logout
+                                            Profile
                                         </button>
+
+                                        {isDropdownOpen && (
+                                            <div className="absolute right-0 mt-2 w-48 bg-gray-800 rounded-md shadow-lg">
+                                                <Link
+                                                    href="/profile"
+                                                    className="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700"
+                                                >
+                                                    View Profile
+                                                </Link>
+                                                <button
+                                                    onClick={() => {
+                                                        sessionStorage.removeItem('user')
+                                                        setUser(null)
+                                                        setViewMode('all')
+                                                    }}
+                                                    className="block w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-gray-700"
+                                                >
+                                                    Logout
+                                                </button>
+                                            </div>
+                                        )}
                                     </div>
-                                )}
-                            </div>
+                                </>
+                            ) : (
+                                <Link
+                                    href="/login"
+                                    className="px-6 py-2 bg-blue-600 text-white rounded-full hover:bg-blue-700"
+                                >
+                                    Login
+                                </Link>
+                            )}
                         </div>
                     </div>
                 </div>
             </nav>
 
-            {/* Hero Carousel - Kept simple */}
             <div className="relative h-96 mb-8 overflow-hidden">
                 <div
                     className="h-full flex transition-transform duration-500"
@@ -203,19 +211,18 @@ export default function Home() {
                                     <p className="text-gray-200 mb-4">
                                         {drama.memberCount?.toLocaleString()} members
                                     </p>
-                                    <Link
-                                        href={`/k/${drama.slug}`}
-                                        className="inline-block px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                                    <button
+                                        onClick={() => handleRestrictedAction(() => router.push(`/k/${drama.slug}`))}
+                                        className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
                                     >
                                         Join Community
-                                    </Link>
+                                    </button>
                                 </div>
                             </div>
                         </div>
                     ))}
                 </div>
 
-                {/* Carousel Controls - Simplified */}
                 <button
                     onClick={prevSlide}
                     className="absolute left-4 top-1/2 -translate-y-1/2 p-2 bg-black/50 rounded-full text-white hover:bg-black/70"
@@ -242,9 +249,7 @@ export default function Home() {
                 </div>
             </div>
 
-            {/* Main Content - Simplified layout */}
             <div className="max-w-6xl mx-auto px-4 flex gap-8">
-                {/* Left Sidebar */}
                 <div className="w-64 flex-shrink-0">
                     <div className="bg-gray-800 rounded-xl p-6 sticky top-20 border border-gray-700">
                         <h2 className="text-lg font-semibold text-white mb-6 flex items-center">
@@ -253,10 +258,10 @@ export default function Home() {
                         </h2>
                         <div className="space-y-3 custom-scrollbar max-h-[70vh] overflow-y-auto pr-2">
                             {dramas.map((drama) => (
-                                <Link
+                                <div
                                     key={drama.slug}
-                                    href={`/k/${drama.slug}`}
-                                    className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-700"
+                                    onClick={() => handleRestrictedAction(() => router.push(`/k/${drama.slug}`))}
+                                    className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-700 cursor-pointer"
                                 >
                                     <img
                                         src={drama.imageUrl}
@@ -272,49 +277,54 @@ export default function Home() {
                                             {drama.memberCount?.toLocaleString()} members
                                         </div>
                                     </div>
-                                </Link>
+                                </div>
                             ))}
                         </div>
                     </div>
                 </div>
 
-                {/* Main Content Area */}
                 <div className="flex-1">
-                    <PostForm user={user} onPostCreated={refreshPosts}/>
+                    {user ? (
+                        <PostForm user={user} onPostCreated={refreshPosts}/>
+                    ) : (
+                        <div className="bg-gray-800 p-6 rounded-xl mb-6 text-center">
+                            <p className="text-gray-300 mb-4">Login to share your thoughts and interact with the community</p>
+                            <Link
+                                href="/login"
+                                className="px-6 py-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 inline-block"
+                            >
+                                Login to Post
+                            </Link>
+                        </div>
+                    )}
                     <div className="mt-6">
                         <PostList
                             viewMode={viewMode}
                             currentUser={user}
                             refreshKey={refreshKey}
+                            onRestrictedAction={handleRestrictedAction}
                         />
                     </div>
                 </div>
 
-                {/* Right Sidebar */}
                 <div className="w-64 flex-shrink-0">
                     <div className="bg-gray-800 rounded-xl p-6 sticky top-20 border border-gray-700">
                         <h2 className="text-lg font-semibold text-blue-400 mb-6">
                             Trending Dramas
                         </h2>
                         <div className="space-y-4">
-
                             {dramas.slice(0, 5).map((drama, index) => {
-                                // Different icons based on trending rank
                                 const TrendIcon = index === 0 ? Flame :
                                     index === 1 ? TrendingUp :
                                         ArrowUpCircle;
 
                                 return (
-                                    <Link
+                                    <div
                                         key={drama.slug}
-                                        href={`/k/${drama.slug}`}
-                                        className="flex items-center gap-3 p-4 rounded-lg hover:bg-gray-700 border border-transparent group"
+                                        onClick={() => handleRestrictedAction(() => router.push(`/k/${drama.slug}`))}
+                                        className="flex items-center gap-3 p-4 rounded-lg hover:bg-gray-700 cursor-pointer"
                                     >
-                                        <div className={`${
-                                            index === 0 ? 'text-blue-400' :
-                                                index === 1 ? 'text-blue-400' :
-                                                    'text-blue-400'
-                                        }`}>
+                                        <div className="text-blue-400">
                                             <TrendIcon className="w-5 h-5" />
                                         </div>
                                         <div>
@@ -325,7 +335,7 @@ export default function Home() {
                                                 {drama.memberCount?.toLocaleString()} active users
                                             </div>
                                         </div>
-                                    </Link>
+                                    </div>
                                 );
                             })}
                         </div>

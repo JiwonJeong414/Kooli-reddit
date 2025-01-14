@@ -1,16 +1,17 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import type { Post } from '@/types'
 import { ChevronUp, ChevronDown, Pencil, Trash } from 'lucide-react';
 
-
 interface PostListProps {
     viewMode: 'all' | 'my-posts' | 'drama'
-    currentUser: any
+    currentUser: any | null
     refreshKey: number
     dramaSlug?: string
+    onRestrictedAction: (action: Function) => void
 }
 
 interface VoteStatus {
@@ -21,7 +22,8 @@ interface DramaColors {
     [key: string]: string;
 }
 
-export default function PostList({ viewMode, currentUser, refreshKey, dramaSlug }: PostListProps) {
+export default function PostList({ viewMode, currentUser, refreshKey, dramaSlug, onRestrictedAction }: PostListProps) {
+    const router = useRouter()
     const [posts, setPosts] = useState<Post[]>([])
     const [loading, setLoading] = useState(true)
     const [userVotes, setUserVotes] = useState<VoteStatus>({})
@@ -33,7 +35,7 @@ export default function PostList({ viewMode, currentUser, refreshKey, dramaSlug 
     const fetchPosts = async () => {
         try {
             let url = '/api/posts'
-            if (viewMode === 'my-posts') {
+            if (viewMode === 'my-posts' && currentUser) {
                 url += `?userId=${currentUser.id}`
             } else if (viewMode === 'drama' && dramaSlug) {
                 url += `?dramaSlug=${dramaSlug}`
@@ -41,12 +43,10 @@ export default function PostList({ viewMode, currentUser, refreshKey, dramaSlug 
 
             const response = await fetch(url)
             const data = await response.json()
-            // Sort posts by votes in descending order
             const sortedPosts = data.sort((a: Post, b: Post) => b.votes - a.votes)
             setPosts(sortedPosts)
 
-            // Fetch colors for each unique drama
-            if (viewMode === 'all') {
+            if (viewMode === 'all' && currentUser) {
                 const uniqueDramas = [...new Set(data.map((post: Post) => post.dramaSlug))]
                 const colors: DramaColors = {}
 
@@ -64,14 +64,16 @@ export default function PostList({ viewMode, currentUser, refreshKey, dramaSlug 
                 setDramaColors(colors)
             }
 
-            const votes: VoteStatus = {};
-            data.forEach((post: Post) => {
-                const userVote = post.voters?.find(voter => voter.userId === currentUser.id);
-                if (userVote) {
-                    votes[post._id] = userVote.vote;
-                }
-            });
-            setUserVotes(votes);
+            if (currentUser) {
+                const votes: VoteStatus = {};
+                data.forEach((post: Post) => {
+                    const userVote = post.voters?.find(voter => voter.userId === currentUser.id);
+                    if (userVote) {
+                        votes[post._id] = userVote.vote;
+                    }
+                });
+                setUserVotes(votes);
+            }
         } catch (error) {
             console.error('Error fetching posts:', error)
         } finally {
@@ -81,12 +83,14 @@ export default function PostList({ viewMode, currentUser, refreshKey, dramaSlug 
 
     useEffect(() => {
         fetchPosts()
-    }, [viewMode, currentUser.id, refreshKey, dramaSlug])
+    }, [viewMode, currentUser?.id, refreshKey, dramaSlug])
 
     const handleEdit = (post: Post) => {
-        setEditingPost(post)
-        setEditTitle(post.title)
-        setEditContent(post.content)
+        onRestrictedAction(() => {
+            setEditingPost(post)
+            setEditTitle(post.title)
+            setEditContent(post.content)
+        })
     }
 
     const handleCancelEdit = () => {
@@ -96,72 +100,78 @@ export default function PostList({ viewMode, currentUser, refreshKey, dramaSlug 
     }
 
     const handleSaveEdit = async (postId: string) => {
-        try {
-            const response = await fetch(`/api/posts/${postId}`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    title: editTitle,
-                    content: editContent
-                }),
-            })
+        onRestrictedAction(async () => {
+            try {
+                const response = await fetch(`/api/posts/${postId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        title: editTitle,
+                        content: editContent
+                    }),
+                })
 
-            if (!response.ok) throw new Error('Failed to update post')
+                if (!response.ok) throw new Error('Failed to update post')
 
-            setEditingPost(null)
-            setEditTitle('')
-            setEditContent('')
-            await fetchPosts()
-        } catch (error) {
-            console.error('Error updating post:', error)
-            alert('Failed to update post')
-        }
+                setEditingPost(null)
+                setEditTitle('')
+                setEditContent('')
+                await fetchPosts()
+            } catch (error) {
+                console.error('Error updating post:', error)
+                alert('Failed to update post')
+            }
+        })
     }
 
     const handleDelete = async (postId: string) => {
-        if (!confirm('Are you sure you want to delete this post?')) return
+        onRestrictedAction(async () => {
+            if (!confirm('Are you sure you want to delete this post?')) return
 
-        try {
-            const response = await fetch(`/api/posts/${postId}`, {
-                method: 'DELETE',
-            })
+            try {
+                const response = await fetch(`/api/posts/${postId}`, {
+                    method: 'DELETE',
+                })
 
-            if (!response.ok) throw new Error('Failed to delete post')
-            await fetchPosts()
-        } catch (error) {
-            console.error('Error deleting post:', error)
-            alert('Failed to delete post')
-        }
+                if (!response.ok) throw new Error('Failed to delete post')
+                await fetchPosts()
+            } catch (error) {
+                console.error('Error deleting post:', error)
+                alert('Failed to delete post')
+            }
+        })
     }
 
     const handleVote = async (e: React.MouseEvent, postId: string, vote: 1 | -1) => {
         e.preventDefault()
 
-        try {
-            const newVote = userVotes[postId] === vote ? null : vote;
+        onRestrictedAction(async () => {
+            try {
+                const newVote = userVotes[postId] === vote ? null : vote;
 
-            const response = await fetch('/api/posts/vote', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    postId,
-                    userId: currentUser.id,
-                    vote: newVote
-                }),
-            })
+                const response = await fetch('/api/posts/vote', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        postId,
+                        userId: currentUser?.id,
+                        vote: newVote
+                    }),
+                })
 
-            if (!response.ok) {
-                throw new Error('Failed to vote')
+                if (!response.ok) {
+                    throw new Error('Failed to vote')
+                }
+
+                await fetchPosts()
+            } catch (error) {
+                console.error('Error voting:', error)
             }
-
-            await fetchPosts()
-        } catch (error) {
-            console.error('Error voting:', error)
-        }
+        })
     }
 
     if (loading) return (
@@ -245,27 +255,30 @@ export default function PostList({ viewMode, currentUser, refreshKey, dramaSlug 
                                 </div>
                             ) : (
                                 <>
-                                    <Link
-                                        href={post.dramaSlug ? `/k/${post.dramaSlug}` : '/k/general'}
+                                    <div
+                                        onClick={() => onRestrictedAction(() => router.push(post.dramaSlug ? `/k/${post.dramaSlug}` : '/k/general'))}
                                         style={post.dramaSlug ? { color: dramaColors[post.dramaSlug] } : undefined}
-                                        className={`text-sm font-medium hover:opacity-80 mb-2 inline-block ${
+                                        className={`text-sm font-medium hover:opacity-80 mb-2 inline-block cursor-pointer ${
                                             !post.dramaSlug ? 'text-gray-500' : ''
                                         }`}
                                     >
                                         k/{post.dramaTitle || 'general'}
-                                    </Link>
-                                    <Link href={`/posts/${post._id}`} className="block">
+                                    </div>
+                                    <div
+                                        onClick={() => onRestrictedAction(() => router.push(`/posts/${post._id}`))}
+                                        className="block cursor-pointer"
+                                    >
                                         <h2 className="text-lg text-white font-semibold leading-snug">
                                             {post.title}
                                         </h2>
                                         <p className="text-gray-400 mt-2">{post.content}</p>
-                                    </Link>
+                                    </div>
                                     <div className="flex items-center justify-between mt-3 text-sm text-gray-500">
                                         <div>
                                             Posted by u/{post.author?.username || 'Anonymous'} • {' '}
                                             {new Date(post.createdAt).toLocaleDateString()}
                                         </div>
-                                        {currentUser.id === post.author?.id && (
+                                        {currentUser?.id === post.author?.id && (
                                             <div className="flex items-center gap-3">
                                                 <button
                                                     onClick={() => handleEdit(post)}
