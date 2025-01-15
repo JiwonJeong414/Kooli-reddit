@@ -4,10 +4,13 @@ import clientPromise from '@/lib/mongodb'
 
 export async function GET(
     request: NextRequest,
-    { params }: { params: { slug: string } }
+    context: { params: { slug: string } }
 ) {
     try {
-        const { slug } = params
+        // Await the params object
+        const params = await context.params
+        const slug = params.slug
+
         const client = await clientPromise
         const db = client.db("reddit-clone")
 

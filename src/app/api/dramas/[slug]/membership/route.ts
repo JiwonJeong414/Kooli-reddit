@@ -79,6 +79,10 @@ export async function GET(
     { params }: { params: { slug: string } }
 ) {
     try {
+        // Await the entire params object
+        const resolvedParams = await params
+        const slug = resolvedParams.slug
+
         const userId = request.nextUrl.searchParams.get('userId')
         if (!userId) {
             return NextResponse.json(
@@ -93,15 +97,15 @@ export async function GET(
         // Check if drama exists in user's joinedDramas array
         const user = await db.collection("users").findOne({
             _id: new ObjectId(userId),
-            'joinedDramas.slug': params.slug
+            'joinedDramas.slug': slug
         })
 
         // Generate color for this drama
-        const color = generateDramaColor(params.slug)
+        const color = generateDramaColor(slug)
 
         return NextResponse.json({
             isMember: !!user,
-            color  // Include color in response
+            color
         })
     } catch (error) {
         console.error('Error checking membership:', error)
