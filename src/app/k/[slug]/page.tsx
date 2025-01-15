@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import PostForm from '@/components/PostForm'
 import PostList from '@/components/PostList'
 import Link from 'next/link'
-import { ArrowLeft, Users, MessageCircle, Share2 } from 'lucide-react'
+import { ArrowLeft, Users } from 'lucide-react'
 import type { Drama } from '@/types'
 
 // Custom scrollbar style

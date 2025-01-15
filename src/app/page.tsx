@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import PostForm from '@/components/PostForm'
 import PostList from '@/components/PostList'
 import Link from 'next/link'
-import { ChevronLeft, ChevronRight, Users, LogOut, User, Flame, TrendingUp, ArrowUpCircle } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Users, Flame, TrendingUp, ArrowUpCircle } from 'lucide-react'
 import type { Drama } from '@/types'
 
 const customScrollbarStyle = `

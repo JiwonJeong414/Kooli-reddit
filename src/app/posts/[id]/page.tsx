@@ -3,7 +3,6 @@
 import React from 'react'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import Link from 'next/link'
 import { ArrowLeft, MessageSquare, Send } from 'lucide-react'
 import type { Post, Comment } from '@/types'
 
