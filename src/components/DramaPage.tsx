@@ -6,32 +6,32 @@ import PostForm from '@/components/PostForm'
 import { Drama } from '@/types'
 
 export default function DramaPage({ params }: { params: { slug: string } }) {
-    const [drama, setDrama] = useState<Drama | null>(null)
-    const [user, setUser] = useState<any>(null)
-    const [refreshKey, setRefreshKey] = useState(0)
+    const { slug } = params;
+
+    const [drama, setDrama] = useState<Drama | null>(null);
+    const [user, setUser] = useState<any>(null);
+    const [refreshKey, setRefreshKey] = useState(0);
 
     useEffect(() => {
-        // Load user from session storage
-        const userData = sessionStorage.getItem('user')
+        const userData = sessionStorage.getItem('user');
         if (userData) {
-            setUser(JSON.parse(userData))
+            setUser(JSON.parse(userData));
         }
 
-        // Fetch drama and its posts
         const fetchDrama = async () => {
             try {
-                const response = await fetch(`/api/dramas/${params.slug}`)
-                const data = await response.json()
-                setDrama(data.drama)
+                const response = await fetch(`/api/dramas/${slug}`);
+                const data = await response.json();
+                setDrama(data.drama);
             } catch (error) {
-                console.error('Error fetching drama:', error)
+                console.error('Error fetching drama:', error);
             }
-        }
+        };
 
-        fetchDrama()
-    }, [params.slug])
+        fetchDrama();
+    }, [slug]);
 
-    if (!drama) return <div>Loading...</div>
+    if (!drama) return <div>Loading...</div>;
 
     return (
         <div className="min-h-screen bg-black py-8">
