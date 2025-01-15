@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import PostForm from '@/components/PostForm'
 import PostList from '@/components/PostList'
@@ -31,6 +31,12 @@ export default function Home() {
     const router = useRouter()
     const [refreshKey, setRefreshKey] = useState(0)
 
+    const top10Dramas = useMemo(() => {
+        return [...dramas]
+            .sort((a, b) => (b.memberCount || 0) - (a.memberCount || 0))
+            .slice(0, 10)
+    }, [dramas])
+
     const handleRestrictedAction = (action: Function) => {
         if (!user) {
             router.push('/login')
@@ -40,12 +46,12 @@ export default function Home() {
     }
 
     useEffect(() => {
-        if (dramas.length === 0) return
+        if (top10Dramas.length === 0) return
         const timer = setInterval(() => {
-            setCurrentSlide(prev => (prev + 1) % dramas.length)
+            setCurrentSlide(prev => (prev + 1) % top10Dramas.length)
         }, 5000)
         return () => clearInterval(timer)
-    }, [dramas.length])
+    }, [top10Dramas.length])
 
     useEffect(() => {
         const userData = sessionStorage.getItem('user')
@@ -87,11 +93,11 @@ export default function Home() {
     }
 
     const nextSlide = () => {
-        setCurrentSlide((prev) => (prev + 1) % dramas.length)
+        setCurrentSlide((prev) => (prev + 1) % top10Dramas.length)
     }
 
     const prevSlide = () => {
-        setCurrentSlide((prev) => (prev - 1 + dramas.length) % dramas.length)
+        setCurrentSlide((prev) => (prev - 1 + top10Dramas.length) % top10Dramas.length)
     }
 
     return (
@@ -155,7 +161,8 @@ export default function Home() {
                                         </button>
 
                                         {isDropdownOpen && (
-                                            <div className="absolute right-0 mt-2 w-48 bg-gray-800 rounded-md shadow-lg">
+                                            <div
+                                                className="absolute right-0 mt-2 w-48 bg-gray-800 rounded-md shadow-lg">
                                                 <Link
                                                     href="/profile"
                                                     className="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700"
@@ -194,7 +201,7 @@ export default function Home() {
                     className="h-full flex transition-transform duration-500"
                     style={{transform: `translateX(-${currentSlide * 100}%)`}}
                 >
-                    {dramas.map((drama, index) => (
+                    {top10Dramas.map((drama, index) => (
                         <div key={index} className="w-full h-full flex-shrink-0 relative">
                             <div className="absolute inset-0 bg-gradient-to-t from-gray-900 to-transparent"/>
                             <img
@@ -209,7 +216,7 @@ export default function Home() {
                                         {drama.title}
                                     </h2>
                                     <p className="text-gray-200 mb-4">
-                                        {drama.memberCount?.toLocaleString()} members
+                                        {drama.memberCount?.toLocaleString()} members • Top {index + 1} Drama
                                     </p>
                                     <button
                                         onClick={() => handleRestrictedAction(() => router.push(`/k/${drama.slug}`))}
@@ -237,7 +244,7 @@ export default function Home() {
                 </button>
 
                 <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex space-x-2">
-                    {dramas.map((_, index) => (
+                    {top10Dramas.map((_, index) => (
                         <button
                             key={index}
                             onClick={() => setCurrentSlide(index)}
@@ -253,7 +260,7 @@ export default function Home() {
                 <div className="w-64 flex-shrink-0">
                     <div className="bg-gray-800 rounded-xl p-6 sticky top-20 border border-gray-700">
                         <h2 className="text-lg font-semibold text-white mb-6 flex items-center">
-                            <Users className="w-5 h-5 mr-2 text-blue-400" />
+                            <Users className="w-5 h-5 mr-2 text-blue-400"/>
                             <span className="text-white">Drama Communities</span>
                         </h2>
                         <div className="space-y-3 custom-scrollbar max-h-[70vh] overflow-y-auto pr-2">
@@ -288,7 +295,8 @@ export default function Home() {
                         <PostForm user={user} onPostCreated={refreshPosts}/>
                     ) : (
                         <div className="bg-gray-800 p-6 rounded-xl mb-6 text-center">
-                            <p className="text-gray-300 mb-4">Login to share your thoughts and interact with the community</p>
+                            <p className="text-gray-300 mb-4">Login to share your thoughts and interact with the
+                                community</p>
                             <Link
                                 href="/login"
                                 className="px-6 py-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 inline-block"
@@ -325,7 +333,7 @@ export default function Home() {
                                         className="flex items-center gap-3 p-4 rounded-lg hover:bg-gray-700 cursor-pointer"
                                     >
                                         <div className="text-blue-400">
-                                            <TrendIcon className="w-5 h-5" />
+                                            <TrendIcon className="w-5 h-5"/>
                                         </div>
                                         <div>
                                             <div className="text-gray-200 font-medium">
