@@ -9,21 +9,20 @@ function generateDramaColor(slug: string): string {
     for (let i = 0; i < slug.length; i++) {
         hash = slug.charCodeAt(i) + ((hash << 5) - hash);
     }
-    // Generate consistent colors with good saturation and brightness
     const hue = Math.abs(hash) % 360;
-    return `hsl(${hue}, 70%, 60%)`; // More vibrant colors
+    return `hsl(${hue}, 70%, 60%)`;
 }
+
 export async function POST(request: NextRequest) {
     try {
-        // Extract the slug from the request URL
-        const slug = request.nextUrl.pathname.split('/').slice(-3)[0]; // Adjust based on the route structure
+        const { userId, action } = await request.json()
+        // Get slug from URL pattern
+        const slug = request.nextUrl.pathname.split('/')[3] // Assuming path is /api/dramas/[slug]/membership
 
-        const { userId, action } = await request.json();
-        const client = await clientPromise;
-        const db = client.db("reddit-clone");
+        const client = await clientPromise
+        const db = client.db("reddit-clone")
 
         if (action === 'join') {
-            // Add to user's joinedDramas array
             await db.collection("users").updateOne(
                 { _id: new ObjectId(userId) },
                 {
@@ -31,81 +30,77 @@ export async function POST(request: NextRequest) {
                         joinedDramas: {
                             slug,
                             joinedAt: new Date(),
-                            color: generateDramaColor(slug),
-                        },
-                    },
+                            color: generateDramaColor(slug)
+                        }
+                    }
                 }
-            );
+            )
 
-            // Update drama member count
             await db.collection("dramas").updateOne(
                 { slug },
                 { $inc: { memberCount: 1 } }
-            );
+            )
         } else if (action === 'leave') {
-            // Remove from user's joinedDramas array
             await db.collection("users").updateOne(
                 { _id: new ObjectId(userId) },
                 {
-                    // @ts-ignore
                     $pull: {
-                        joinedDramas: { slug },
-                    },
+                        joinedDramas: { slug } as any
+                    }
                 }
             );
 
-            // Update drama member count
             await db.collection("dramas").updateOne(
                 { slug },
                 { $inc: { memberCount: -1 } }
-            );
+            )
         }
 
-        const color = generateDramaColor(slug);
-        return NextResponse.json({ success: true, color });
+        const color = generateDramaColor(slug)
+        return NextResponse.json({ success: true, color })
     } catch (error) {
-        console.error('Membership error:', error);
+        console.error('Membership error:', error)
         return NextResponse.json(
             { error: 'Failed to update membership' },
             { status: 500 }
-        );
+        )
     }
 }
 
 export async function GET(request: NextRequest) {
     try {
-        // Extract the slug from the request URL
-        const slug = request.nextUrl.pathname.split('/').slice(-3)[0]; // Adjust based on the route structure
-        const userId = request.nextUrl.searchParams.get('userId');
+        // Get slug from URL pattern
+        const slug = request.nextUrl.pathname.split('/')[3] // Assuming path is /api/dramas/[slug]/membership
 
+        const userId = request.nextUrl.searchParams.get('userId')
         if (!userId) {
             return NextResponse.json(
                 { error: 'User ID required' },
                 { status: 400 }
-            );
+            )
         }
 
-        const client = await clientPromise;
-        const db = client.db("reddit-clone");
+        const client = await clientPromise
+        const db = client.db("reddit-clone")
 
-        // Check if drama exists in user's joinedDramas array
         const user = await db.collection("users").findOne({
             _id: new ObjectId(userId),
             'joinedDramas.slug': slug
-        });
+        })
 
-        // Generate color for this drama
-        const color = generateDramaColor(slug);
+        const color = generateDramaColor(slug)
 
         return NextResponse.json({
             isMember: !!user,
             color
-        });
+        })
     } catch (error) {
-        console.error('Error checking membership:', error);
+        console.error('Error checking membership:', error)
         return NextResponse.json(
             { error: 'Failed to check membership' },
             { status: 500 }
-        );
+        )
     }
 }
+
+export const dynamic = 'force-dynamic'

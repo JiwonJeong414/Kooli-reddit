@@ -3,6 +3,7 @@
 import React from 'react'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { ArrowLeft, MessageSquare, Send } from 'lucide-react'
 import type { Post, Comment } from '@/types'
 
@@ -20,55 +21,66 @@ const customScrollbarStyle = `
   }
 `
 
-export default function PostDetail({ params }: { params: { id: string } }) {
-    const { id: postId } = params;
+interface PageProps {
+    params: Promise<{ id: string }>
+}
 
-    const [post, setPost] = useState<Post | null>(null);
-    const [comments, setComments] = useState<Comment[]>([]);
-    const [newComment, setNewComment] = useState('');
-    const [isSubmitting, setIsSubmitting] = useState(false);
-    const [user, setUser] = useState<any>(null);
-    const router = useRouter();
+export default function PostDetail({ params }: PageProps) {
+    const [post, setPost] = useState<Post | null>(null)
+    const [comments, setComments] = useState<Comment[]>([])
+    const [newComment, setNewComment] = useState('')
+    const [isSubmitting, setIsSubmitting] = useState(false)
+    const [user, setUser] = useState<any>(null)
+    const [postId, setPostId] = useState<string>('')
+    const router = useRouter()
 
     const goBack = () => {
-        router.back();
-    };
+        router.back()
+    }
 
     useEffect(() => {
-        const userData = sessionStorage.getItem('user');
+        params.then(resolvedParams => {
+            setPostId(resolvedParams.id)
+        })
+    }, [params])
+
+    useEffect(() => {
+        if (!postId) return // Don't fetch if postId isn't available yet
+
+        const userData = sessionStorage.getItem('user')
         if (!userData) {
-            router.push('/login');
+            router.push('/login')
         } else {
-            setUser(JSON.parse(userData));
+            setUser(JSON.parse(userData))
         }
 
         const fetchData = async () => {
             try {
                 const [postRes, commentsRes] = await Promise.all([
                     fetch(`/api/posts/${postId}`),
-                    fetch(`/api/comments?postId=${postId}`),
-                ]);
+                    fetch(`/api/comments?postId=${postId}`)
+                ])
 
-                if (!postRes.ok || !commentsRes.ok) throw new Error('Failed to fetch');
+                if (!postRes.ok || !commentsRes.ok) throw new Error('Failed to fetch')
 
-                const postData = await postRes.json();
-                const commentsData = await commentsRes.json();
+                const postData = await postRes.json()
+                const commentsData = await commentsRes.json()
 
-                setPost(postData);
-                setComments(commentsData);
+                setPost(postData)
+                setComments(commentsData)
             } catch (error) {
-                console.error('Error:', error);
+                console.error('Error:', error)
             }
-        };
+        }
 
-        fetchData();
-    }, [postId, router]);
+        fetchData()
+    }, [postId, router])
 
     const handleSubmitComment = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!newComment.trim() || isSubmitting) return;
+        e.preventDefault()
+        if (!newComment.trim() || isSubmitting || !postId) return
 
-        setIsSubmitting(true);
+        setIsSubmitting(true)
         try {
             const response = await fetch('/api/comments', {
                 method: 'POST',
@@ -77,37 +89,36 @@ export default function PostDetail({ params }: { params: { id: string } }) {
                 },
                 body: JSON.stringify({
                     content: newComment,
-                    postId,
+                    postId: postId,
                     author: {
                         id: user.id,
-                        username: user.username,
-                    },
+                        username: user.username
+                    }
                 }),
-            });
+            })
 
-            if (!response.ok) throw new Error('Failed to post comment');
+            if (!response.ok) throw new Error('Failed to post comment')
 
-            const comment = await response.json();
-            setComments((prev) => [comment, ...prev]);
-            setNewComment('');
+            const comment = await response.json()
+            setComments(prev => [comment, ...prev])
+            setNewComment('')
         } catch (error) {
-            console.error('Error posting comment:', error);
+            console.error('Error posting comment:', error)
         } finally {
-            setIsSubmitting(false);
+            setIsSubmitting(false)
         }
-    };
+    }
 
-    if (!post)
-        return (
-            <div className="min-h-screen bg-gray-900 py-8">
-                <div className="max-w-4xl mx-auto px-4">
-                    <div className="animate-pulse space-y-4">
-                        <div className="h-8 bg-gray-800 w-24 rounded"></div>
-                        <div className="h-48 bg-gray-800 rounded-xl"></div>
-                    </div>
+    if (!post) return (
+        <div className="min-h-screen bg-gray-900 py-8">
+            <div className="max-w-4xl mx-auto px-4">
+                <div className="animate-pulse space-y-4">
+                    <div className="h-8 bg-gray-800 w-24 rounded"></div>
+                    <div className="h-48 bg-gray-800 rounded-xl"></div>
                 </div>
             </div>
-        );
+        </div>
+    )
 
     return (
         <div className="min-h-screen bg-gray-900">

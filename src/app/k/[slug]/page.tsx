@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import PostForm from '@/components/PostForm'
 import PostList from '@/components/PostList'
 import Link from 'next/link'
-import { ArrowLeft, Users } from 'lucide-react'
+import { ArrowLeft, Users, MessageCircle, Share2 } from 'lucide-react'
 import type { Drama } from '@/types'
 
 // Custom scrollbar style
@@ -22,82 +22,94 @@ const customScrollbarStyle = `
   }
 `
 
-export default function DramaCommunity({ params }: { params: { slug: string } }) {
-    const { slug } = params;
+interface PageProps {
+    params: Promise<{ slug: string }>
+}
 
-    const [drama, setDrama] = useState<Drama | null>(null);
-    const [user, setUser] = useState<any>(null);
-    const [isMember, setIsMember] = useState(false);
-    const [memberCount, setMemberCount] = useState(0);
-    const [isLoading, setIsLoading] = useState(true);
-    const [refreshKey, setRefreshKey] = useState(0);
-    const router = useRouter();
+export default function DramaCommunity({ params }: PageProps) {
+    const [slug, setSlug] = useState<string>('')
+    const [drama, setDrama] = useState<Drama | null>(null)
+    const [user, setUser] = useState<any>(null)
+    const [isMember, setIsMember] = useState(false)
+    const [memberCount, setMemberCount] = useState(0)
+    const [isLoading, setIsLoading] = useState(true)
+    const [refreshKey, setRefreshKey] = useState(0)
+    const router = useRouter()
 
     const handlePostCreated = () => {
-        setRefreshKey((prev) => prev + 1);
-    };
+        setRefreshKey(prev => prev + 1)
+    }
 
     useEffect(() => {
-        const userData = sessionStorage.getItem('user');
+        // Resolve the slug from params
+        params.then(resolvedParams => {
+            setSlug(resolvedParams.slug)
+        })
+    }, [params])
+
+    useEffect(() => {
+        if (!slug) return // Don't fetch if slug isn't available yet
+
+        const userData = sessionStorage.getItem('user')
         if (userData) {
-            setUser(JSON.parse(userData));
+            setUser(JSON.parse(userData))
         }
 
         const fetchDramaDetails = async () => {
             try {
                 if (!userData) {
-                    setIsLoading(false);
-                    return;
+                    setIsLoading(false)
+                    return
                 }
 
-                const userObj = JSON.parse(userData);
+                const userObj = JSON.parse(userData)
                 const [dramaRes, membershipRes] = await Promise.all([
                     fetch(`/api/dramas/${slug}`),
-                    fetch(`/api/dramas/${slug}/membership?userId=${userObj.id}`),
-                ]);
+                    fetch(`/api/dramas/${slug}/membership?userId=${userObj.id}`)
+                ])
 
-                const dramaData = await dramaRes.json();
-                const membershipData = await membershipRes.json();
+                const dramaData = await dramaRes.json()
+                const membershipData = await membershipRes.json()
 
-                setDrama(dramaData);
-                setMemberCount(dramaData.memberCount || 0);
-                setIsMember(membershipData.isMember);
-                setIsLoading(false);
+                setDrama(dramaData)
+                setMemberCount(dramaData.memberCount || 0)
+                setIsMember(membershipData.isMember)
+                setIsLoading(false)
             } catch (error) {
-                console.error('Error:', error);
-                setIsLoading(false);
+                console.error('Error:', error)
+                setIsLoading(false)
             }
-        };
+        }
 
-        fetchDramaDetails();
-    }, [slug]);
+        fetchDramaDetails()
+    }, [slug])
 
     const handleJoinLeave = async () => {
         if (!user) {
-            router.push('/login');
-            return;
+            router.push('/login')
+            return
         }
 
         try {
             const response = await fetch(`/api/dramas/${slug}/membership`, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
+                    'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
                     userId: user.id,
-                    action: isMember ? 'leave' : 'join',
-                }),
-            });
+                    action: isMember ? 'leave' : 'join'
+                })
+            })
 
             if (response.ok) {
-                setIsMember(!isMember);
-                setMemberCount((prev) => (isMember ? prev - 1 : prev + 1));
+                setIsMember(!isMember)
+                setMemberCount(prev => isMember ? prev - 1 : prev + 1)
             }
         } catch (error) {
-            console.error('Error:', error);
+            console.error('Error:', error)
         }
-    };
+    }
 
     if (isLoading) {
         return (
@@ -109,10 +121,10 @@ export default function DramaCommunity({ params }: { params: { slug: string } })
                     </div>
                 </div>
             </div>
-        );
+        )
     }
 
-    if (!drama) return <div>Drama not found</div>;
+    if (!drama) return <div>Drama not found</div>
 
     return (
         <div className="min-h-screen bg-gray-900">
