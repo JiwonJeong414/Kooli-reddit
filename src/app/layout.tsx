@@ -4,6 +4,9 @@ import './globals.css'
 export const metadata: Metadata = {
     title: 'Kooli Forum',
     description: 'A Kooli Forum built with Next.js',
+    icons: {
+        icon: '/koolilogo.webp',
+    },
 }
 
 export default function RootLayout({
@@ -13,10 +16,6 @@ export default function RootLayout({
 }) {
     return (
         <html lang="en">
-        <head>
-            {/* Add Favicon */}
-            <link rel="icon" href="/koolilogo.webp" type="image/webp" />
-        </head>
         <body className="bg-black min-h-screen text-white">
         <main>{children}</main>
         </body>
