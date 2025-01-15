@@ -32,7 +32,7 @@ export async function POST(
                         joinedDramas: {
                             slug: params.slug,
                             joinedAt: new Date(),
-                            color: generateDramaColor(params.slug) // Add color to the stored data
+                            color: generateDramaColor(params.slug)
                         }
                     }
                 }
@@ -45,16 +45,14 @@ export async function POST(
             )
         } else if (action === 'leave') {
             // Remove from user's joinedDramas array
-            // @ts-ignore
             await db.collection("users").updateOne(
                 { _id: new ObjectId(userId) },
                 {
                     $pull: {
-                        joinedDramas: { slug: params.slug } as any
+                        joinedDramas: { slug: params.slug }
                     }
                 }
             );
-
 
             // Update drama member count
             await db.collection("dramas").updateOne(
@@ -79,10 +77,6 @@ export async function GET(
     { params }: { params: { slug: string } }
 ) {
     try {
-        // Await the entire params object
-        const resolvedParams = await params
-        const slug = resolvedParams.slug
-
         const userId = request.nextUrl.searchParams.get('userId')
         if (!userId) {
             return NextResponse.json(
@@ -97,11 +91,11 @@ export async function GET(
         // Check if drama exists in user's joinedDramas array
         const user = await db.collection("users").findOne({
             _id: new ObjectId(userId),
-            'joinedDramas.slug': slug
+            'joinedDramas.slug': params.slug
         })
 
         // Generate color for this drama
-        const color = generateDramaColor(slug)
+        const color = generateDramaColor(params.slug)
 
         return NextResponse.json({
             isMember: !!user,
