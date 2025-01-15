@@ -5,7 +5,10 @@ export const metadata: Metadata = {
     title: 'Kooli Forum',
     description: 'A Kooli Forum built with Next.js',
     icons: {
-        icon: '/koolilogo.webp',
+        icon: [
+            { url: '/koolilogo.webp', type: 'image/webp' }
+        ],
+        shortcut: '/koolilogo.webp',
     },
 }
 
