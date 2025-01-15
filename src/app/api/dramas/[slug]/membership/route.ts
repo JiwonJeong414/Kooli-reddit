@@ -48,6 +48,7 @@ export async function POST(
             await db.collection("users").updateOne(
                 { _id: new ObjectId(userId) },
                 {
+                // @ts-ignore
                     $pull: {
                         joinedDramas: { slug: params.slug }
                     }
@@ -72,40 +73,40 @@ export async function POST(
     }
 }
 
-export async function GET(
-    request: NextRequest,
-    { params }: { params: { slug: string } }
-) {
+export async function GET(request: NextRequest) {
     try {
-        const userId = request.nextUrl.searchParams.get('userId')
+        // Extract the slug from the request URL
+        const slug = request.nextUrl.pathname.split('/').slice(-3)[0]; // Adjust based on the route structure
+        const userId = request.nextUrl.searchParams.get('userId');
+
         if (!userId) {
             return NextResponse.json(
                 { error: 'User ID required' },
                 { status: 400 }
-            )
+            );
         }
 
-        const client = await clientPromise
-        const db = client.db("reddit-clone")
+        const client = await clientPromise;
+        const db = client.db("reddit-clone");
 
         // Check if drama exists in user's joinedDramas array
         const user = await db.collection("users").findOne({
             _id: new ObjectId(userId),
-            'joinedDramas.slug': params.slug
-        })
+            'joinedDramas.slug': slug
+        });
 
         // Generate color for this drama
-        const color = generateDramaColor(params.slug)
+        const color = generateDramaColor(slug);
 
         return NextResponse.json({
             isMember: !!user,
             color
-        })
+        });
     } catch (error) {
-        console.error('Error checking membership:', error)
+        console.error('Error checking membership:', error);
         return NextResponse.json(
             { error: 'Failed to check membership' },
             { status: 500 }
-        )
+        );
     }
 }
